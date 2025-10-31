@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - All Bookings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #d4af37;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #1a237e;
+        }
+        
+        .stat-card h3 {
+            color: #546e7a;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-card .value {
+            color: #1a237e;
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .bookings-table {
+            width: 100%;
+            background: white;
+            border-radius: 10px;
+            overflow-x: auto;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .bookings-table table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            font-size: 0.75em;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-btn-view {
+            background: #1a237e;
+            color: white;
+        }
+        
+        .action-btn-view:hover {
+            background: #283593;
+            transform: translateY(-1px);
+        }
+        
+        .action-btn-edit {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        .action-btn-edit:hover {
+            background: #ffb300;
+        }
+        
+        .action-btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .action-btn-delete:hover {
+            background: #c82333;
+        }
+        
+        .bookings-table thead {
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            color: white;
+        }
+        
+        .bookings-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .bookings-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .bookings-table tbody tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .bookings-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .ticket-type-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        
+        .type-single {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .type-double {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .type-triple {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        
+        .no-bookings {
+            text-align: center;
+            padding: 40px;
+            color: #546e7a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-header">
+            <div>
+                <h1>Admin Panel</h1>
+                <p class="subtitle">All Bookings Overview</p>
+            </div>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">← Back to Home</a>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Bookings</h3>
+                <div class="value">{{ total_bookings }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Confirmed</h3>
+                <div class="value" style="color: #28a745;">{{ confirmed_bookings }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pending</h3>
+                <div class="value" style="color: #ffc107;">{{ pending_bookings }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Cancelled</h3>
+                <div class="value" style="color: #dc3545;">{{ cancelled_bookings }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Accommodations Used</h3>
+                <div class="value">{{ total_accommodations_used }} / {{ total_accommodations }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Available</h3>
+                <div class="value" style="color: #28a745;">{{ available_accommodations }}</div>
+            </div>
+        </div>
+        
+        {% if bookings %}
+        <div class="bookings-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>BASL ID</th>
+                        <th>NIC</th>
+                        <th>Type</th>
+                        <th>Additional BASL IDs</th>
+                        <th>Status</th>
+                        <th>Accommodations</th>
+                        <th>Created</th>
+                        <th>Receipt</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                        <td><strong>#{{ booking.id }}</strong></td>
+                        <td>{{ booking.lawyer.name }}</td>
+                        <td>{{ booking.lawyer.email }}</td>
+                        <td>{{ booking.lawyer.basl_id }}</td>
+                        <td>{{ booking.lawyer.nic }}</td>
+                        <td>
+                            <span class="ticket-type-badge type-{{ booking.ticket_type.lower() }}">
+                                {{ booking.ticket_type }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if booking.additional_basl_ids %}
+                                {% set additional_persons = booking.additional_basl_ids|fromjson %}
+                                {% for person in additional_persons %}
+                                    <div style="margin-bottom: 5px;">
+                                        <strong>{{ person.name }}</strong><br>
+                                        <small>BASL: {{ person.basl_id }}, NIC: {{ person.nic }}</small>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <span style="color: #999;">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ booking.status }}">
+                                {{ booking.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <strong>{{ get_accommodation_usage(booking.ticket_type) }}</strong>
+                        </td>
+                        <td>{{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            {% if booking.receipt_filename %}
+                                <span style="color: #28a745;">✓ Uploaded</span>
+                            {% else %}
+                                <span style="color: #999;">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="white-space: nowrap;">
+                            <div class="action-buttons">
+                                <a href="{{ url_for('admin_view_booking', booking_id=booking.id) }}" 
+                                   class="action-btn action-btn-view">View</a>
+                                <a href="{{ url_for('admin_edit_booking', booking_id=booking.id) }}" 
+                                   class="action-btn action-btn-edit">Edit</a>
+                                <form method="POST" action="{{ url_for('admin_delete_booking', booking_id=booking.id) }}" 
+                                      style="display: inline; margin: 0;"
+                                      onsubmit="return confirm('Are you sure you want to delete this booking?');">
+                                    <button type="submit" class="action-btn action-btn-delete">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-bookings">
+            <h2>No Bookings Yet</h2>
+            <p>No bookings have been created yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
+

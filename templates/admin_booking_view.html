@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Booking #{{ booking.id }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .booking-detail-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .detail-row {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #1a237e;
+            width: 200px;
+        }
+        
+        .detail-value {
+            color: #333;
+            flex: 1;
+        }
+        
+        .receipt-preview {
+            max-width: 100%;
+            margin-top: 20px;
+            border: 2px solid #d4af37;
+            border-radius: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+        }
+        
+        .receipt-preview img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        
+        .receipt-preview iframe {
+            width: 100%;
+            height: 600px;
+            border: none;
+            border-radius: 5px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-header">
+            <div>
+                <h1>Booking Details</h1>
+                <p class="subtitle">Booking ID: #{{ booking.id }}</p>
+            </div>
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary">← Back to Admin</a>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <div class="booking-detail-card">
+            <h2 style="color: #1a237e; margin-bottom: 20px; border-bottom: 2px solid #d4af37; padding-bottom: 10px;">Lawyer Information</h2>
+            
+            <div class="detail-row">
+                <div class="detail-label">Name:</div>
+                <div class="detail-value">{{ booking.lawyer.name }}</div>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-label">Email:</div>
+                <div class="detail-value">{{ booking.lawyer.email }}</div>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-label">Phone:</div>
+                <div class="detail-value">{{ booking.lawyer.phone }}</div>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-label">BASL ID:</div>
+                <div class="detail-value">{{ booking.lawyer.basl_id }}</div>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-label">NIC Number:</div>
+                <div class="detail-value">{{ booking.lawyer.nic }}</div>
+            </div>
+        </div>
+        
+        <div class="booking-detail-card">
+            <h2 style="color: #1a237e; margin-bottom: 20px; border-bottom: 2px solid #d4af37; padding-bottom: 10px;">Booking Information</h2>
+            
+            <div class="detail-row">
+                <div class="detail-label">Booking ID:</div>
+                <div class="detail-value"><strong>#{{ booking.id }}</strong></div>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-label">Accommodation Type:</div>
+                <div class="detail-value">
+                    <span class="ticket-type-badge type-{{ booking.ticket_type.lower() }}" style="display: inline-block; padding: 5px 12px; border-radius: 5px; font-weight: 600;">
+                        {{ booking.ticket_type }}
+                    </span>
+                </div>
+            </div>
+            
+            {% if booking.additional_basl_ids %}
+                {% set additional_persons = booking.additional_basl_ids|fromjson %}
+                {% for person in additional_persons %}
+                <div class="detail-row">
+                    <div class="detail-label">Additional Person {{ loop.index }}:</div>
+                    <div class="detail-value">
+                        <strong>{{ person.name }}</strong><br>
+                        BASL ID: {{ person.basl_id }} | NIC: {{ person.nic }} | Phone: {{ person.phone }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% endif %}
+            
+            <div class="detail-row">
+                <div class="detail-label">Accommodations Used:</div>
+                <div class="detail-value"><strong>{{ get_accommodation_usage(booking.ticket_type) }}</strong></div>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-label">Status:</div>
+                <div class="detail-value">
+                    <span class="status-badge status-{{ booking.status }}" style="display: inline-block; padding: 5px 15px; border-radius: 20px; font-size: 0.85em; font-weight: 600; text-transform: uppercase;">
+                        {{ booking.status }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-label">Created At:</div>
+                <div class="detail-value">{{ booking.created_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+            </div>
+            
+            <div class="detail-row">
+                <div class="detail-label">Expires At:</div>
+                <div class="detail-value">{{ booking.expires_at.strftime('%B %d, %Y at %I:%M %p') }}</div>
+            </div>
+        </div>
+        
+        {% if booking.receipt_filename %}
+        <div class="booking-detail-card">
+            <h2 style="color: #1a237e; margin-bottom: 20px; border-bottom: 2px solid #d4af37; padding-bottom: 10px;">Uploaded Receipt</h2>
+            
+            <div class="receipt-preview">
+                {% set file_ext = booking.receipt_filename.split('.')[-1].lower() %}
+                {% if file_ext in ['jpg', 'jpeg', 'png', 'gif'] %}
+                    <img src="{{ url_for('admin_view_receipt', filename=booking.receipt_filename) }}" 
+                         alt="Receipt Image">
+                {% elif file_ext == 'pdf' %}
+                    <iframe src="{{ url_for('admin_view_receipt', filename=booking.receipt_filename) }}"></iframe>
+                {% else %}
+                    <p>File type not previewable. <a href="{{ url_for('admin_view_receipt', filename=booking.receipt_filename) }}" target="_blank">Download</a></p>
+                {% endif %}
+            </div>
+            
+            <p style="margin-top: 10px; color: #546e7a;">
+                <strong>File:</strong> {{ booking.receipt_filename }}
+            </p>
+        </div>
+        {% else %}
+        <div class="booking-detail-card">
+            <h2 style="color: #1a237e; margin-bottom: 20px; border-bottom: 2px solid #d4af37; padding-bottom: 10px;">Receipt</h2>
+            <p style="color: #999;">No receipt uploaded yet.</p>
+        </div>
+        {% endif %}
+        
+        <div class="action-buttons">
+            <a href="{{ url_for('admin_edit_booking', booking_id=booking.id) }}" class="btn btn-primary">Edit Booking</a>
+            <form method="POST" action="{{ url_for('admin_delete_booking', booking_id=booking.id) }}" 
+                  style="display: inline;"
+                  onsubmit="return confirm('Are you sure you want to delete this booking? This action cannot be undone.');">
+                <button type="submit" class="btn btn-secondary" style="background: #dc3545; color: white; border: 2px solid #dc3545;">Delete Booking</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
+

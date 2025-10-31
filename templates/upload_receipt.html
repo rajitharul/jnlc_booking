@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Bank Transfer Receipt</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Upload Bank Transfer Receipt</h1>
+            <p class="subtitle">Complete your booking within 5 minutes</p>
+        </header>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <div class="receipt-upload-container">
+            <div class="booking-summary">
+                <h2>Booking Summary</h2>
+                <div class="summary-details">
+                    <p><strong>Name:</strong> {{ booking.lawyer.name }}</p>
+                    <p><strong>Email:</strong> {{ booking.lawyer.email }}</p>
+                    <p><strong>BASL ID:</strong> {{ booking.lawyer.basl_id }}</p>
+                    <p><strong>NIC Number:</strong> {{ booking.lawyer.nic }}</p>
+                    <p><strong>Accommodation Type:</strong> {{ booking.ticket_type }}</p>
+                    {% if booking.additional_basl_ids %}
+                        {% set additional_persons = booking.additional_basl_ids|fromjson %}
+                        <div style="margin-top: 15px;">
+                            <strong>Additional Person(s):</strong>
+                            {% for person in additional_persons %}
+                                <div style="margin-top: 10px; padding: 10px; background: #e7f3ff; border-radius: 5px;">
+                                    <p style="margin: 5px 0;"><strong>Name:</strong> {{ person.name }}</p>
+                                    <p style="margin: 5px 0;"><strong>BASL ID:</strong> {{ person.basl_id }}</p>
+                                    <p style="margin: 5px 0;"><strong>NIC:</strong> {{ person.nic }}</p>
+                                    <p style="margin: 5px 0;"><strong>Phone:</strong> {{ person.phone }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <p><strong>Accommodations Used:</strong> {{ get_accommodation_usage(booking.ticket_type) }}</p>
+                </div>
+            </div>
+            
+            <div class="timer-section">
+                <div class="timer-card">
+                    <h3>Time Remaining</h3>
+                    <div class="countdown" id="countdown">{{ time_remaining }}</div>
+                    <p class="timer-label">seconds</p>
+                </div>
+            </div>
+            
+            {% if booking.status == 'pending' %}
+            <div class="upload-section">
+                <h2>Upload Your Bank Transfer Receipt</h2>
+                <p class="help-text">Accepted formats: PNG, JPG, JPEG, PDF (Max 16MB)</p>
+                
+                <form method="POST" action="{{ url_for('upload_receipt', booking_id=booking.id) }}" 
+                      enctype="multipart/form-data" class="upload-form">
+                    <div class="file-upload">
+                        <input type="file" id="receipt" name="receipt" accept=".png,.jpg,.jpeg,.pdf" required 
+                               onchange="updateFileName(this)">
+                        <label for="receipt" class="file-label">
+                            <span id="file-label-text">Choose File</span>
+                        </label>
+                        <div id="file-name-display" style="margin-top: 10px; color: #667eea; font-weight: 600; display: none;"></div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Upload Receipt</button>
+                </form>
+                
+                <div class="warning-box">
+                    <p>⚠️ <strong>Important:</strong> If you fail to upload your receipt within 5 minutes, your booking will be automatically cancelled and the tickets will be released.</p>
+                </div>
+            </div>
+            {% else %}
+            <div class="status-section">
+                <p class="status-message">This booking is no longer active.</p>
+                <a href="{{ url_for('index') }}" class="btn btn-primary">Return to Home</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        function updateFileName(input) {
+            const fileNameDisplay = document.getElementById('file-name-display');
+            const fileLabelText = document.getElementById('file-label-text');
+            
+            if (input.files && input.files[0]) {
+                const fileName = input.files[0].name;
+                fileNameDisplay.textContent = 'Selected: ' + fileName;
+                fileNameDisplay.style.display = 'block';
+                fileLabelText.textContent = 'Change File';
+            } else {
+                fileNameDisplay.style.display = 'none';
+                fileLabelText.textContent = 'Choose File';
+            }
+        }
+        
+        let timeRemaining = {{ time_remaining }};
+        const countdownElement = document.getElementById('countdown');
+        
+        function updateCountdown() {
+            if (timeRemaining > 0) {
+                countdownElement.textContent = timeRemaining;
+                timeRemaining--;
+                
+                // Change color when less than 60 seconds
+                if (timeRemaining < 60) {
+                    countdownElement.style.color = '#e74c3c';
+                }
+                
+                setTimeout(updateCountdown, 1000);
+            } else {
+                countdownElement.textContent = '0';
+                countdownElement.style.color = '#e74c3c';
+                
+                // Check booking status
+                checkBookingStatus();
+            }
+        }
+        
+        function checkBookingStatus() {
+            fetch('{{ url_for("check_status", booking_id=booking.id) }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.expired || data.status === 'cancelled') {
+                        alert('Your booking has expired. Please create a new booking.');
+                        window.location.href = '{{ url_for("index") }}';
+                    }
+                });
+        }
+        
+        // Start countdown
+        updateCountdown();
+        
+        // Check status every 10 seconds
+        setInterval(checkBookingStatus, 10000);
+    </script>
+</body>
+</html>
+

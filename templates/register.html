@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register & Reserve Tickets</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Register & Reserve Your Tickets</h1>
+            <a href="{{ url_for('index') }}" class="back-link">← Back to Home</a>
+        </header>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <div class="form-container">
+            <form method="POST" action="{{ url_for('register') }}" class="booking-form">
+                <div class="form-section">
+                    <h2>Personal Information</h2>
+                    <div class="form-group">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" name="name" required placeholder="Enter your full name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" required placeholder="your.email@example.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" name="phone" required placeholder="+1234567890">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="basl_id">BASL ID *</label>
+                        <input type="text" id="basl_id" name="basl_id" required placeholder="Enter your BASL ID">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="nic">NIC Number *</label>
+                        <input type="text" id="nic" name="nic" required placeholder="Enter your NIC number">
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h2>Select Accommodation Type</h2>
+                    <p class="help-text">Choose your accommodation type. Available: {{ available_accommodations }} / {{ total_accommodations }} accommodations</p>
+                    
+                    <div class="ticket-type-selection">
+                        <div class="radio-option">
+                            <input type="radio" id="ticket_single" name="ticket_type" value="Single" required onchange="toggleAdditionalFields()">
+                            <label for="ticket_single">
+                                <strong>Single</strong>
+                                <span class="option-desc">1 person - Uses 1 accommodation</span>
+                            </label>
+                        </div>
+                        
+                        <div class="radio-option">
+                            <input type="radio" id="ticket_double" name="ticket_type" value="Double" required onchange="toggleAdditionalFields()">
+                            <label for="ticket_double">
+                                <strong>Double</strong>
+                                <span class="option-desc">2 people - Uses 2 accommodations</span>
+                            </label>
+                        </div>
+                        
+                        <div class="radio-option">
+                            <input type="radio" id="ticket_triple" name="ticket_type" value="Triple" required onchange="toggleAdditionalFields()">
+                            <label for="ticket_triple">
+                                <strong>Triple</strong>
+                                <span class="option-desc">3 people - Uses 3 accommodations</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="additional-basl-section" style="display: none; margin-top: 20px;">
+                        <h3>Additional Person(s) Information Required</h3>
+                        <p class="help-text">Please provide complete details (Name, BASL ID, NIC, Phone) of the additional person(s) sharing the accommodation.</p>
+                        
+                        <div id="double-basl" style="display: none;">
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 15px;">
+                                <h4 style="color: #1a237e; margin-bottom: 15px;">Second Person Details</h4>
+                                <div class="form-group">
+                                    <label for="additional_name_1">Full Name *</label>
+                                    <input type="text" id="additional_name_1" name="additional_name_1" required placeholder="Enter full name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="additional_basl_1">BASL ID *</label>
+                                    <input type="text" id="additional_basl_1" name="additional_basl_1" required placeholder="Enter BASL ID">
+                                </div>
+                                <div class="form-group">
+                                    <label for="additional_nic_1">NIC Number *</label>
+                                    <input type="text" id="additional_nic_1" name="additional_nic_1" required placeholder="Enter NIC number">
+                                </div>
+                                <div class="form-group">
+                                    <label for="additional_phone_1">Phone Number *</label>
+                                    <input type="tel" id="additional_phone_1" name="additional_phone_1" required placeholder="Enter phone number">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="triple-basl" style="display: none;">
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 15px; margin-bottom: 15px;">
+                                <h4 style="color: #1a237e; margin-bottom: 15px;">Second Person Details</h4>
+                                <div class="form-group">
+                                    <label for="additional_name_1_triple">Full Name *</label>
+                                    <input type="text" id="additional_name_1_triple" name="additional_name_1" required placeholder="Enter full name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="additional_basl_1_triple">BASL ID *</label>
+                                    <input type="text" id="additional_basl_1_triple" name="additional_basl_1" required placeholder="Enter BASL ID">
+                                </div>
+                                <div class="form-group">
+                                    <label for="additional_nic_1_triple">NIC Number *</label>
+                                    <input type="text" id="additional_nic_1_triple" name="additional_nic_1" required placeholder="Enter NIC number">
+                                </div>
+                                <div class="form-group">
+                                    <label for="additional_phone_1_triple">Phone Number *</label>
+                                    <input type="tel" id="additional_phone_1_triple" name="additional_phone_1" required placeholder="Enter phone number">
+                                </div>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 15px;">
+                                <h4 style="color: #1a237e; margin-bottom: 15px;">Third Person Details</h4>
+                                <div class="form-group">
+                                    <label for="additional_name_2">Full Name *</label>
+                                    <input type="text" id="additional_name_2" name="additional_name_2" required placeholder="Enter full name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="additional_basl_2">BASL ID *</label>
+                                    <input type="text" id="additional_basl_2" name="additional_basl_2" required placeholder="Enter BASL ID">
+                                </div>
+                                <div class="form-group">
+                                    <label for="additional_nic_2">NIC Number *</label>
+                                    <input type="text" id="additional_nic_2" name="additional_nic_2" required placeholder="Enter NIC number">
+                                </div>
+                                <div class="form-group">
+                                    <label for="additional_phone_2">Phone Number *</label>
+                                    <input type="tel" id="additional_phone_2" name="additional_phone_2" required placeholder="Enter phone number">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary" id="submit-btn">Reserve Tickets</button>
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function toggleAdditionalFields() {
+            const ticketType = document.querySelector('input[name="ticket_type"]:checked');
+            const additionalSection = document.getElementById('additional-basl-section');
+            const doubleSection = document.getElementById('double-basl');
+            const tripleSection = document.getElementById('triple-basl');
+            
+            // Clear all additional fields and remove required
+            const allAdditionalInputs = document.querySelectorAll('#additional-basl-section input');
+            allAdditionalInputs.forEach(input => {
+                input.value = '';
+                input.required = false;
+            });
+            
+            if (!ticketType) {
+                additionalSection.style.display = 'none';
+                return;
+            }
+            
+            if (ticketType.value === 'Single') {
+                additionalSection.style.display = 'none';
+            } else if (ticketType.value === 'Double') {
+                additionalSection.style.display = 'block';
+                doubleSection.style.display = 'block';
+                tripleSection.style.display = 'none';
+                // Set required for all Double fields
+                document.getElementById('additional_name_1').required = true;
+                document.getElementById('additional_basl_1').required = true;
+                document.getElementById('additional_nic_1').required = true;
+                document.getElementById('additional_phone_1').required = true;
+            } else if (ticketType.value === 'Triple') {
+                additionalSection.style.display = 'block';
+                doubleSection.style.display = 'none';
+                tripleSection.style.display = 'block';
+                // Set required for all Triple fields
+                document.getElementById('additional_name_1_triple').required = true;
+                document.getElementById('additional_basl_1_triple').required = true;
+                document.getElementById('additional_nic_1_triple').required = true;
+                document.getElementById('additional_phone_1_triple').required = true;
+                document.getElementById('additional_name_2').required = true;
+                document.getElementById('additional_basl_2').required = true;
+                document.getElementById('additional_nic_2').required = true;
+                document.getElementById('additional_phone_2').required = true;
+            }
+        }
+    </script>
+</body>
+</html>

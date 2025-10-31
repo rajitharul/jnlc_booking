@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 3px solid #667eea;
+        }
+        .header h1 {
+            color: #667eea;
+            margin: 0;
+            font-size: 24px;
+        }
+        .success-icon {
+            font-size: 48px;
+            color: #28a745;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .booking-details {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .detail-value {
+            color: #333;
+        }
+        .ticket-info {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .footer {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            color: #666;
+            font-size: 12px;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>Junior National Law Conference</h1>
+        </div>
+        
+        <div class="success-icon">✓</div>
+        
+        <div class="content">
+            <h2 style="color: #28a745; text-align: center;">Booking Confirmed!</h2>
+            
+            <p>Dear {{ lawyer.name }},</p>
+            
+            <p>We are pleased to confirm that your ticket booking for the <strong>Junior National Law Conference</strong> has been successfully processed.</p>
+            
+            <div class="booking-details">
+                <h3 style="color: #667eea; margin-top: 0;">Booking Details</h3>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Booking ID:</span>
+                    <span class="detail-value">#{{ booking.id }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value">{{ lawyer.name }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value">{{ lawyer.email }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">BASL ID:</span>
+                    <span class="detail-value">{{ lawyer.basl_id }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">NIC Number:</span>
+                    <span class="detail-value">{{ lawyer.nic }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Booking Date:</span>
+                    <span class="detail-value">{{ booking.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                </div>
+            </div>
+            
+            <div class="ticket-info">
+                <h3 style="color: #667eea; margin-top: 0;">Accommodation Information</h3>
+                <p><strong>Accommodation Type:</strong> {{ booking.ticket_type }}</p>
+                {% if booking.additional_basl_ids %}
+                    {% set additional_persons = booking.additional_basl_ids|fromjson %}
+                    <p><strong>Additional Person(s):</strong></p>
+                    <ul style="margin-left: 20px;">
+                        {% for person in additional_persons %}
+                        <li style="margin-bottom: 10px;">
+                            <strong>{{ person.name }}</strong><br>
+                            BASL ID: {{ person.basl_id }} | NIC: {{ person.nic }} | Phone: {{ person.phone }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <p><strong>Accommodations Used:</strong> {{ get_accommodation_usage(booking.ticket_type) }}</p>
+            </div>
+            
+            <div class="highlight">
+                <p style="margin: 0;"><strong>Important:</strong> Please keep your Booking ID (#{{ booking.id }}) for your records. You will need to present this at the conference venue.</p>
+            </div>
+            
+            <p>If you have any questions or concerns, please contact us at the conference registration desk.</p>
+            
+            <p>We look forward to seeing you at the conference!</p>
+            
+            <p>Best regards,<br>
+            <strong>Junior National Law Conference Organizing Committee</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated confirmation email. Please do not reply to this message.</p>
+            <p>&copy; {{ booking.created_at.year }} Junior National Law Conference. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
+

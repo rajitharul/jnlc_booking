@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmed</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="confirmation-container">
+            <div class="success-icon">✓</div>
+            <h1>Booking Confirmed!</h1>
+            <p class="success-message">Your tickets have been successfully reserved.</p>
+            
+            <div class="booking-details-card">
+                <h2>Booking Details</h2>
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <span class="label">Booking ID:</span>
+                        <span class="value">#{{ booking.id }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Name:</span>
+                        <span class="value">{{ booking.lawyer.name }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Email:</span>
+                        <span class="value">{{ booking.lawyer.email }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Phone:</span>
+                        <span class="value">{{ booking.lawyer.phone }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">BASL ID:</span>
+                        <span class="value">{{ booking.lawyer.basl_id }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">NIC Number:</span>
+                        <span class="value">{{ booking.lawyer.nic }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Accommodation Type:</span>
+                        <span class="value">{{ booking.ticket_type }}</span>
+                    </div>
+                    {% if booking.additional_basl_ids %}
+                        {% set additional_persons = booking.additional_basl_ids|fromjson %}
+                        {% for person in additional_persons %}
+                        <div class="detail-item">
+                            <span class="label">Additional Person {{ loop.index }}:</span>
+                            <span class="value">{{ person.name }} (BASL: {{ person.basl_id }}, NIC: {{ person.nic }}, Phone: {{ person.phone }})</span>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                    <div class="detail-item">
+                        <span class="label">Accommodations Used:</span>
+                        <span class="value">{{ get_accommodation_usage(booking.ticket_type) }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Status:</span>
+                        <span class="value status-confirmed">{{ booking.status.upper() }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Booking Date:</span>
+                        <span class="value">{{ booking.created_at.strftime('%B %d, %Y at %I:%M %p') }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="next-steps">
+                <h3>Next Steps</h3>
+                <ul>
+                    <li>Keep your booking ID (#{{ booking.id }}) for reference</li>
+                    <li>You will receive a confirmation email at {{ booking.lawyer.email }}</li>
+                    <li>Present your booking ID at the conference venue</li>
+                </ul>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{{ url_for('index') }}" class="btn btn-primary">Return to Home</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
