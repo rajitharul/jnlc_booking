@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from datetime import datetime, timedelta
+from functools import wraps
 import os
 import json
 from werkzeug.utils import secure_filename
@@ -16,6 +17,14 @@ if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Database connection options for PostgreSQL (if using PostgreSQL)
+if database_url.startswith('postgresql://'):
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,  # Verify connections before using them
+        'pool_recycle': 300,    # Recycle connections after 5 minutes
+        'connect_args': {'connect_timeout': 10}  # 10 second connection timeout
+    }
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
@@ -32,8 +41,22 @@ app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'coder
 db = SQLAlchemy(app)
 mail = Mail(app)
 
+# Admin credentials - can be set via environment variables
+ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin123')  # Change this in production!
+
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Authentication decorator for admin routes
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'admin_logged_in' not in session or not session['admin_logged_in']:
+            flash('Please login to access admin panel.', 'error')
+            return redirect(url_for('admin_login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 # Database Models
 class Lawyer(db.Model):
@@ -57,11 +80,26 @@ class Booking(db.Model):
     
     lawyer = db.relationship('Lawyer', backref='bookings')
 
-# Initialize database
-with app.app_context():
-    # Create tables only if they don't exist
-    # This preserves existing data on application restart
-    db.create_all()
+# Initialize database - lazy initialization to avoid blocking startup
+def init_db():
+    """Initialize database - call this after app context is available"""
+    try:
+        with app.app_context():
+            db.create_all()
+            # Start background thread only once
+            if not hasattr(app, 'background_thread_started'):
+                threading.Thread(target=background_task, daemon=True).start()
+                app.background_thread_started = True
+    except Exception as e:
+        print(f"Database initialization error: {str(e)}")
+
+# Try to initialize database, but don't block if it fails
+try:
+    with app.app_context():
+        db.create_all()
+except Exception as e:
+    print(f"Warning: Could not initialize database at startup: {str(e)}")
+    print("Database will be initialized on first request")
 
 # Add template functions
 @app.template_filter('fromjson')
@@ -141,12 +179,34 @@ def cancel_expired_bookings():
 # Background thread to check and cancel expired bookings
 def background_task():
     while True:
-        with app.app_context():
-            cancel_expired_bookings()
+        try:
+            with app.app_context():
+                cancel_expired_bookings()
+        except Exception as e:
+            print(f"Error in background task: {str(e)}")
         time.sleep(10)  # Check every 10 seconds
 
-# Start background thread
-threading.Thread(target=background_task, daemon=True).start()
+# Background thread will be started in before_first_request
+
+# Ensure database is initialized on first request
+@app.before_request
+def ensure_db_initialized():
+    """Ensure database is initialized before handling requests"""
+    if not hasattr(app, 'db_initialized'):
+        try:
+            db.create_all()
+            app.db_initialized = True
+            # Start background thread if not already started
+            if not hasattr(app, 'background_thread_started'):
+                threading.Thread(target=background_task, daemon=True).start()
+                app.background_thread_started = True
+        except Exception as e:
+            print(f"Database initialization error: {str(e)}")
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for deployment platforms"""
+    return jsonify({'status': 'ok'}), 200
 
 @app.route('/')
 def index():
@@ -367,7 +427,36 @@ def check_status(booking_id):
         'expired': booking.expires_at <= datetime.utcnow()
     })
 
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    """Admin login page"""
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['admin_logged_in'] = True
+            session['admin_username'] = username
+            flash('Login successful!', 'success')
+            return redirect(url_for('admin'))
+        else:
+            flash('Invalid username or password.', 'error')
+    
+    # If already logged in, redirect to admin
+    if session.get('admin_logged_in'):
+        return redirect(url_for('admin'))
+    
+    return render_template('admin_login.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    """Admin logout"""
+    session.clear()
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('admin_login'))
+
 @app.route('/admin')
+@admin_required
 def admin():
     """Admin panel to view all bookings"""
     # Get all bookings ordered by creation date (newest first)
@@ -394,12 +483,14 @@ def admin():
                          total_accommodations=total)
 
 @app.route('/admin/booking/<int:booking_id>')
+@admin_required
 def admin_view_booking(booking_id):
     """View detailed information about a specific booking"""
     booking = Booking.query.get_or_404(booking_id)
     return render_template('admin_booking_view.html', booking=booking)
 
 @app.route('/admin/booking/<int:booking_id>/edit', methods=['GET', 'POST'])
+@admin_required
 def admin_edit_booking(booking_id):
     """Edit a booking"""
     booking = Booking.query.get_or_404(booking_id)
@@ -470,6 +561,7 @@ def admin_edit_booking(booking_id):
     return render_template('admin_booking_edit.html', booking=booking, additional_basl_list=additional_basl_list)
 
 @app.route('/admin/booking/<int:booking_id>/delete', methods=['POST'])
+@admin_required
 def admin_delete_booking(booking_id):
     """Delete a booking"""
     booking = Booking.query.get_or_404(booking_id)
@@ -496,6 +588,7 @@ def admin_delete_booking(booking_id):
     return redirect(url_for('admin'))
 
 @app.route('/admin/receipt/<path:filename>')
+@admin_required
 def admin_view_receipt(filename):
     """Serve receipt images for viewing"""
     # Filename includes the booking folder path (e.g., booking_1/filename.jpg)

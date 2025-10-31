@@ -142,8 +142,11 @@ SECRET_KEY=change-this-to-a-random-secret-key
      MAIL_USERNAME=coderemdev@gmail.com
      MAIL_PASSWORD=xybsrcahxjwsgxnk
      MAIL_DEFAULT_SENDER=coderemdev@gmail.com
+     ADMIN_USERNAME=admin
+     ADMIN_PASSWORD=your-secure-admin-password
      ```
    - Railway will automatically set `PORT` (don't set it manually)
+   - **Important:** Change `ADMIN_PASSWORD` to a strong password in production!
 
 5. **Deploy and test!**
    - Your app will be available at `https://yourappname.railway.app`

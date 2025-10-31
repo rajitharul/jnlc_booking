@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Junior National Law Conference</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lato:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        .login-container {
+            max-width: 450px;
+            margin: 100px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-header h1 {
+            font-family: 'Playfair Display', serif;
+            color: #1a237e;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .legal-symbol-small {
+            margin-bottom: 15px;
+        }
+        
+        .legal-symbol-small svg {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .login-form {
+            margin-top: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1a237e;
+            font-size: 0.95em;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #1a237e;
+            box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.1);
+        }
+        
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            color: white;
+            border: 2px solid #d4af37;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .login-button:hover {
+            background: linear-gradient(135deg, #283593 0%, #3949ab 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(26, 35, 126, 0.4);
+        }
+        
+        .back-to-home {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .back-to-home a {
+            color: #546e7a;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+        
+        .back-to-home a:hover {
+            color: #1a237e;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="legal-symbol-small">
+                    <svg width="60" height="60" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M40 10 L35 25 L45 25 Z" fill="#d4af37" stroke="#1a237e" stroke-width="2"/>
+                        <line x1="40" y1="25" x2="40" y2="50" stroke="#1a237e" stroke-width="3"/>
+                        <line x1="20" y1="50" x2="60" y2="50" stroke="#1a237e" stroke-width="3"/>
+                        <circle cx="25" cy="50" r="8" fill="none" stroke="#1a237e" stroke-width="3"/>
+                        <circle cx="55" cy="50" r="8" fill="none" stroke="#1a237e" stroke-width="3"/>
+                        <line x1="25" y1="50" x2="25" y2="65" stroke="#1a237e" stroke-width="2"/>
+                        <line x1="55" y1="50" x2="55" y2="65" stroke="#1a237e" stroke-width="2"/>
+                        <line x1="20" y1="65" x2="60" y2="65" stroke="#1a237e" stroke-width="2"/>
+                    </svg>
+                </div>
+                <h1>Admin Login</h1>
+                <p style="color: #546e7a; font-size: 0.9em;">Junior National Law Conference</p>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash flash-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="{{ url_for('admin_login') }}" class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autofocus placeholder="Enter username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter password">
+                </div>
+                
+                <button type="submit" class="login-button">Login</button>
+            </form>
+            
+            <div class="back-to-home">
+                <a href="{{ url_for('index') }}">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -71,7 +71,10 @@
                 <h1>Booking Details</h1>
                 <p class="subtitle">Booking ID: #{{ booking.id }}</p>
             </div>
-            <a href="{{ url_for('admin') }}" class="btn btn-secondary">← Back to Admin</a>
+            <div style="display: flex; gap: 10px;">
+                <a href="{{ url_for('admin') }}" class="btn btn-secondary">← Back to Admin</a>
+                <a href="{{ url_for('admin_logout') }}" class="btn btn-secondary" style="background: #dc3545; color: white;">Logout</a>
+            </div>
         </div>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
